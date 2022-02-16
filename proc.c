@@ -225,7 +225,7 @@ fork(void)
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
 void
-exit(void)
+exit(int status) // Part a
 {
   struct proc *curproc = myproc();
   struct proc *p;
@@ -263,6 +263,7 @@ exit(void)
 
   // Jump into the scheduler, never to return.
   curproc->state = ZOMBIE;
+  curproc->exitStatus = status; // Part a, add exitStatus.
   sched();
   panic("zombie exit");
 }
@@ -270,7 +271,7 @@ exit(void)
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
-wait(void)
+wait(int* status) // Part b
 {
   struct proc *p;
   int havekids, pid;
@@ -295,6 +296,10 @@ wait(void)
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
+        if (status) {
+          *status = p->exitStatus; // Part b, return child exitStatus
+        }
+        p->exitStatus = 0;
         release(&ptable.lock);
         return pid;
       }
@@ -530,5 +535,54 @@ procdump(void)
         cprintf(" %p", pc[i]);
     }
     cprintf("\n");
+  }
+}
+
+// Part c, waitpid.
+// Wait for a process with the given pid, return the pid.
+// Return -1 if no such process.
+int
+waitpid(int pid, int* status, int options)
+{
+  struct proc *p, *curproc = myproc();
+  int haveProcess;
+
+  acquire(&ptable.lock);
+  for(;;) {
+    haveProcess = 0;    
+    // Scan through table looking for target process.
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      // If the pid does not match, continue to scan the next process.
+      if(p->pid != pid) {
+        continue;
+      }
+      haveProcess = 1;
+      if(p->state == ZOMBIE) {
+        //Found the process with the given pid.
+        kfree(p->kstack);
+        p->kstack = 0;
+        freevm(p->pgdir);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->state = UNUSED;
+        if(status) {
+          *status = p->exitStatus;
+        }
+        p->exitStatus = 0;
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+
+    // No point waiting if the the process with given pid does not exist
+    if(!haveProcess || curproc->killed) {
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for the process with the given pid to exit.
+    sleep(curproc, &ptable.lock);
   }
 }
