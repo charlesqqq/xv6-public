@@ -24,6 +24,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int waitpid(int, int*, int); // Part c
+void setPriority(int); // Lab 3 Part A
+void printPerformance(void); // Lab 3 Part C
 
 // ulib.c
 int stat(const char*, struct stat*);

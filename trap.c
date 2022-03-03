@@ -51,6 +51,10 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+      struct proc *p = myproc();
+      if (p && p->state == RUNNING) {
+        p->burstTime++; // Lab 3 Part C. If the process if running, increase burst time.
+      }
       wakeup(&ticks);
       release(&tickslock);
     }

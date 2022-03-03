@@ -121,6 +121,8 @@ int             wait(int*); // Part b
 void            wakeup(void*);
 void            yield(void);
 int             waitpid(int, int*, int); // Part c
+void            setPriority(int); // Lab 3 Part A
+void            printPerformance(void); // Lab 3 Part C
 
 // swtch.S
 void            swtch(struct context**, struct context*);

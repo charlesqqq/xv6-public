@@ -112,6 +112,9 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  p->priority = 10; // Lab 3 Part A
+  p->startTime = ticks; // Lab 3 Part C
+  p->burstTime = 0; // Lab 3 Part C
   return p;
 }
 
@@ -199,6 +202,7 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+  np->priority = curproc->priority; // Lab 3 Part A
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -327,7 +331,7 @@ wait(int* status) // Part b
 void
 scheduler(void)
 {
-  struct proc *p;
+  struct proc *p, *p1;
   struct cpu *c = mycpu();
   c->proc = 0;
   
@@ -337,9 +341,27 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+    // Lab 3 Part B, implement aging of priority and choose the next proc to run.
+    struct proc *nextP;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+
+      // Pick the process with highest priority.
+      nextP = p;
+      for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++) {
+        if(p1->state != RUNNABLE) {
+          continue;
+        }
+        if (p1->priority < nextP->priority) {
+          if (nextP->priority > 0) {
+            nextP->priority--; // Increase the priority of not chosen processes.
+          }
+          nextP = p1;
+        }
+      }
+      p = nextP;
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -347,6 +369,9 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      if (p->priority < 31) {
+        p->priority++; // Decrease the priority of the chosen process.
+      }
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -585,4 +610,29 @@ waitpid(int pid, int* status, int options)
     // Wait for the process with the given pid to exit.
     sleep(curproc, &ptable.lock);
   }
+}
+
+// Lab 3 Part A
+void
+setPriority(int priority)
+{
+  struct proc *curproc = myproc();
+  if (priority < 0) {
+    priority = 0;
+  } else if (priority > 31) {
+    priority = 31;
+  }
+  curproc->priority = priority;
+  yield();
+}
+
+// Lab 3 Part C
+void
+printPerformance(void)
+{
+  struct proc *curproc = myproc();
+  int turnaroundTime = ticks - curproc->startTime;
+  int waitingTime = turnaroundTime - curproc->burstTime;
+  cprintf("Turnaround time of process# %d is %d.\n", curproc->pid, turnaroundTime);
+  cprintf("Waiting time of process# %d is %d.\n", curproc->pid, waitingTime);
 }

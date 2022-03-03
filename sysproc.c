@@ -115,3 +115,22 @@ sys_waitpid(void)
   }
   return waitpid(pid, status, options);
 }
+
+// Lab 3 Part A
+int
+sys_setPriority(void)
+{
+  int priority;
+  if (argint(0, &priority) < 0) {
+    return -1;
+  }
+  setPriority(priority);
+  return 0;
+}
+
+// Lab 3 Part C
+int sys_printPerformance(void)
+{
+  printPerformance();
+  return 0;
+}

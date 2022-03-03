@@ -30,3 +30,5 @@ SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
 SYSCALL(waitpid) // Part c
+SYSCALL(setPriority) // Lab 3 Part A
+SYSCALL(printPerformance) // Lab 3 Part C

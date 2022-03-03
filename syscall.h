@@ -21,3 +21,5 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_waitpid  22 // Part c
+#define SYS_setPriority 23 // Lab 3 Part A
+#define SYS_printPerformance 24 // Lab 3 Part C
