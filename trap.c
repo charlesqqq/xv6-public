@@ -81,6 +81,20 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT: ; // Lab 4 Part 2
+    uint addr = rcr2();
+    uint top = KERNBASE - 1;
+    uint bottom = top - myproc()->stackPages * PGSIZE;
+    if (addr > top || addr < bottom - PGSIZE) { // If the addr is not a page right under the stack, don't grow.
+	    exit(-1);
+	  }
+    addr = PGROUNDDOWN(addr);
+    if (allocuvm(myproc()->pgdir, addr, addr + PGSIZE) == 0) {
+      exit(-1);
+    }
+    myproc()->stackPages++;
+    cprintf("Increased stack size. Number of pages allocated: %d\n", myproc()->stackPages);
+    break;
 
   //PAGEBREAK: 13
   default:

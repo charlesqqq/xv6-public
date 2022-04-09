@@ -53,6 +53,7 @@ struct proc {
   int priority;                // Lab 3 Part A
   int startTime;               // Lab 3 Part C
   int burstTime;               // Lab 3 Part C
+  int stackPages;              // Lab 4 Part 1
 };
 
 // Process memory is laid out contiguously, low addresses first:
